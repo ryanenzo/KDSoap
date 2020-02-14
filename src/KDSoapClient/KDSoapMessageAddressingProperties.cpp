@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -43,6 +43,7 @@ public:
     QVector<KDSoapMessageRelationship::Relationship> relationships;   // Indicates relationships to prior messages, could be included to facilitate longer running message exchanges.
     KDSoapValueList referenceParameters; // Equivalent of the reference parameters object from the endpoint reference within WSDL file
     KDSoapValueList metadata; // Holding metadata information
+    KDSoapMessageAddressingProperties::KDSoapAddressingNamespace addressingNamespace = KDSoapMessageAddressingProperties::Addressing200508;
 };
 
 KDSoapMessageAddressingProperties::KDSoapMessageAddressingProperties()
@@ -200,25 +201,57 @@ void KDSoapMessageAddressingProperties::addMetadata(const KDSoapValue &metadata)
     }
 }
 
+KDSoapMessageAddressingProperties::KDSoapAddressingNamespace KDSoapMessageAddressingProperties::addressingNamespace() const
+{
+    return d->addressingNamespace;
+}
+
+void KDSoapMessageAddressingProperties::setAddressingNamespace(KDSoapMessageAddressingProperties::KDSoapAddressingNamespace addressingNamespace)
+{
+    d->addressingNamespace = addressingNamespace;
+}
+
 KDSoapMessageAddressingProperties::~KDSoapMessageAddressingProperties()
 {
 }
 
-QString KDSoapMessageAddressingProperties::predefinedAddressToString(KDSoapMessageAddressingProperties::KDSoapAddressingPredefinedAddress address)
+QString KDSoapMessageAddressingProperties::predefinedAddressToString(KDSoapMessageAddressingProperties::KDSoapAddressingPredefinedAddress address, KDSoapAddressingNamespace addressingNamespace)
 {
+    QString prefix = addressingNamespaceToString(addressingNamespace);
+    switch (addressingNamespace) {
+    case Addressing200303:
+    case Addressing200403:
+    case Addressing200408: {
+        switch (address) {
+        case Anonymous:
+            prefix += QLatin1String("/role");
+            break;
+        case Unspecified:
+            prefix += QLatin1String("/id");
+            break;
+        default:
+            qWarning("Anything but Anonymous or Unspecified has no meaning in ws-addressing 2004/08 and earlier");
+            return QString();
+        }
+        break;
+    }
+    default:
+        break;
+    }
+
     switch (address) {
     case Anonymous:
-        return QLatin1String("http://www.w3.org/2005/08/addressing/anonymous");
+        return prefix + QLatin1String("/anonymous");
     case None:
-        return QLatin1String("http://www.w3.org/2005/08/addressing/none");
+        return prefix + QLatin1String("/none");
     case Reply:
-        return QLatin1String("http://www.w3.org/2005/08/addressing/reply");
+        return prefix + QLatin1String("/reply");
     case Unspecified:
-        return QLatin1String("http://www.w3.org/2005/08/addressing/unspecified");
-    default:
-        Q_ASSERT(false); // should never happen
-        return QString();
+        return prefix + QLatin1String("/unspecified");
     }
+
+    Q_ASSERT(false); // should never happen
+    return QString();
 }
 
 bool KDSoapMessageAddressingProperties::isWSAddressingNamespace(const QString &namespaceUri)
@@ -229,9 +262,26 @@ bool KDSoapMessageAddressingProperties::isWSAddressingNamespace(const QString &n
             namespaceUri == KDSoapNamespaceManager::soapMessageAddressing200408();
 }
 
-static void writeAddressField(QXmlStreamWriter &writer, const QString &address)
+QString KDSoapMessageAddressingProperties::addressingNamespaceToString(KDSoapAddressingNamespace addressingNamespace)
 {
-    writer.writeStartElement(KDSoapNamespaceManager::soapMessageAddressing(), QLatin1String("Address"));
+    switch (addressingNamespace) {
+    case Addressing200303:
+        return KDSoapNamespaceManager::soapMessageAddressing200303();
+    case Addressing200403:
+        return KDSoapNamespaceManager::soapMessageAddressing200403();
+    case Addressing200408:
+        return KDSoapNamespaceManager::soapMessageAddressing200408();
+    case Addressing200508:
+        return KDSoapNamespaceManager::soapMessageAddressing();
+    default:
+        Q_ASSERT(false); // should never happen
+        return QString();
+    }
+}
+
+static void writeAddressField(QXmlStreamWriter &writer, const QString &addressingNS, const QString &address)
+{
+    writer.writeStartElement(addressingNS, QLatin1String("Address"));
     writer.writeCharacters(address);
     writer.writeEndElement();
 }
@@ -246,10 +296,8 @@ static void writeKDSoapValueVariant(QXmlStreamWriter &writer, const KDSoapValue 
                  "value because it could not be converted into a QString");
 }
 
-static void writeKDSoapValueListHierarchy(KDSoapNamespacePrefixes &namespacePrefixes, QXmlStreamWriter &writer, const KDSoapValueList &values)
+static void writeKDSoapValueListHierarchy(KDSoapNamespacePrefixes &namespacePrefixes, QXmlStreamWriter &writer, const QString &addressingNS, const KDSoapValueList &values)
 {
-    const QString addressingNS = KDSoapNamespaceManager::soapMessageAddressing();
-
     Q_FOREACH (const KDSoapValue &value, values)  {
         const QString topLevelName = value.name();
         writer.writeStartElement(addressingNS, topLevelName);
@@ -257,7 +305,7 @@ static void writeKDSoapValueListHierarchy(KDSoapNamespacePrefixes &namespacePref
         if (value.childValues().isEmpty()) {
             writeKDSoapValueVariant(writer, value);
         } else {
-            writeKDSoapValueListHierarchy(namespacePrefixes, writer, value.childValues());
+            writeKDSoapValueListHierarchy(namespacePrefixes, writer, addressingNS, value.childValues());
         }
 
         writer.writeEndElement();
@@ -269,7 +317,19 @@ void KDSoapMessageAddressingProperties::writeMessageAddressingProperties(KDSoapN
     Q_UNUSED(messageNamespace);
     Q_UNUSED(forceQualified);
 
-    if (d->destination == predefinedAddressToString(None)) {
+    bool supportsNoneAddressing = false;
+    switch (d->addressingNamespace) {
+    case Addressing200303:
+    case Addressing200403:
+    case Addressing200408:
+        supportsNoneAddressing = false;
+        break;
+    case Addressing200508:
+        supportsNoneAddressing = true;
+        break;
+    }
+
+    if (supportsNoneAddressing && d->destination == predefinedAddressToString(None, d->addressingNamespace)) {
         return;
     }
 
@@ -277,7 +337,7 @@ void KDSoapMessageAddressingProperties::writeMessageAddressingProperties(KDSoapN
         return;
     }
 
-    const QString addressingNS = KDSoapNamespaceManager::soapMessageAddressing();
+    const QString addressingNS = addressingNamespaceToString(d->addressingNamespace);
 
     if (!d->destination.isEmpty()) {
         writer.writeStartElement(addressingNS, QLatin1String("To"));
@@ -287,19 +347,19 @@ void KDSoapMessageAddressingProperties::writeMessageAddressingProperties(KDSoapN
 
     if (!d->sourceEndpoint.isEmpty()) {
         writer.writeStartElement(addressingNS, QLatin1String("From"));
-        writeAddressField(writer, d->sourceEndpoint.address());
+        writeAddressField(writer, addressingNS, d->sourceEndpoint.address());
         writer.writeEndElement();
     }
 
     if (!d->replyEndpoint.isEmpty()) {
         writer.writeStartElement(addressingNS, QLatin1String("ReplyTo"));
-        writeAddressField(writer, d->replyEndpoint.address());
+        writeAddressField(writer, addressingNS, d->replyEndpoint.address());
         writer.writeEndElement();
     }
 
     if (!d->faultEndpoint.isEmpty()) {
         writer.writeStartElement(addressingNS, QLatin1String("FaultTo"));
-        writeAddressField(writer, d->faultEndpoint.address());
+        writeAddressField(writer, addressingNS, d->faultEndpoint.address());
         writer.writeEndElement();
     }
 
@@ -332,19 +392,21 @@ void KDSoapMessageAddressingProperties::writeMessageAddressingProperties(KDSoapN
 
     if (!d->referenceParameters.isEmpty()) {
         writer.writeStartElement(addressingNS, QLatin1String("ReferenceParameters"));
-        writeKDSoapValueListHierarchy(namespacePrefixes, writer, d->referenceParameters);
+        writeKDSoapValueListHierarchy(namespacePrefixes, writer, addressingNS, d->referenceParameters);
         writer.writeEndElement();
     }
 
     if (!d->metadata.isEmpty()) {
         writer.writeStartElement(addressingNS, QLatin1String("Metadata"));
-        writeKDSoapValueListHierarchy(namespacePrefixes, writer, d->metadata);
+        writeKDSoapValueListHierarchy(namespacePrefixes, writer, addressingNS, d->metadata);
         writer.writeEndElement();
     }
 }
 
 void KDSoapMessageAddressingProperties::readMessageAddressingProperty(const KDSoapValue &value)
 {
+    const QString addressingNS = addressingNamespaceToString(d->addressingNamespace);
+
     if (value.name() == QLatin1String("Action")) {
         d->action = value.value().toString();
     } else if (value.name() == QLatin1String("MessageID")) {
@@ -358,7 +420,7 @@ void KDSoapMessageAddressingProperties::readMessageAddressingProperty(const KDSo
     } else if (value.name() == QLatin1String("RelatesTo")) {
         KDSoapMessageRelationship::Relationship relationship;
         relationship.uri = (value.value().toString());
-        relationship.relationshipType = QLatin1String("http://www.w3.org/2005/08/addressing/reply");
+        relationship.relationshipType = addressingNS + QLatin1String("/reply");
         foreach (KDSoapValue attr, value.childValues().attributes()) {
             if (attr.name() == QLatin1String("RelationshipType")) {
                 relationship.relationshipType = attr.value().toString();

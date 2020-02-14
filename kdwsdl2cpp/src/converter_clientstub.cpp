@@ -118,7 +118,7 @@ bool Converter::convertClientService()
 
             // Variables (which will go into the d pointer)
             KODE::MemberVariable clientInterfaceVar(QLatin1String("m_clientInterface"), QLatin1String("KDSoapClientInterface*"));
-            clientInterfaceVar.setInitializer(QLatin1String("NULL"));
+            clientInterfaceVar.setInitializer(QLatin1String("nullptr"));
             newClass.addMemberVariable(clientInterfaceVar);
 
             KODE::MemberVariable lastReply(QLatin1String("m_lastReply"), QLatin1String("KDSoapMessage"));
@@ -130,7 +130,7 @@ bool Converter::convertClientService()
             // Ctor and dtor
             {
                 KODE::Function ctor(newClass.name());
-                ctor.addArgument(KODE::Function::Argument(QLatin1String("QObject* _parent"), QLatin1String("0")));
+                ctor.addArgument(KODE::Function::Argument(QLatin1String("QObject* _parent"), QLatin1String("nullptr")));
                 ctor.addInitializer(QLatin1String("QObject(_parent)"));
                 KODE::Function dtor(QLatin1Char('~') + newClass.name());
                 KODE::Code ctorCode, dtorCode;
@@ -197,7 +197,7 @@ bool Converter::convertClientService()
                 getSoapVersion.setDocs(QLatin1String("Return the soap version used.n"));
                 newClass.addFunction(getSoapVersion);
             }
-            // lastErrorCode() method
+            // lastErrorCode() method (which mistakenly returns an int, see github issue #166)
             {
                 KODE::Function lastError(QLatin1String("lastErrorCode"), QLatin1String("int"));
                 lastError.setConst(true);
@@ -210,6 +210,20 @@ bool Converter::convertClientService()
                 lastError.setBody(code);
                 lastError.setDocs(QLatin1String("Return the fault code from the last blocking call.\nEmpty if no error."));
                 newClass.addFunction(lastError);
+            }
+            // lastFaultCode() method
+            {
+                KODE::Function lastFault(QLatin1String("lastFaultCode"), QLatin1String("QString"));
+                lastFault.setConst(true);
+                KODE::Code code;
+                code += "if (d_ptr->m_lastReply.isFault())";
+                code.indent();
+                code += "return d_ptr->m_lastReply.childValues().child(QLatin1String(\"faultcode\")).value().toString();";
+                code.unindent();
+                code += "return QString();";
+                lastFault.setBody(code);
+                lastFault.setDocs(QLatin1String("Return the fault code from the last blocking call.\nEmpty if no error."));
+                newClass.addFunction(lastFault);
             }
             // lastError() method
             {
@@ -355,7 +369,7 @@ bool Converter::convertClientService()
 
                 KODE::Function ctor(jobClass.name());
                 ctor.addArgument(KODE::Function::Argument(QString::fromLatin1("%1* service").arg(fullyQualified(newClass))));
-                ctor.addArgument(KODE::Function::Argument(QLatin1String("QObject* _parent"), QLatin1String("0")));
+                ctor.addArgument(KODE::Function::Argument(QLatin1String("QObject* _parent"), QLatin1String("nullptr")));
                 ctor.addInitializer(QLatin1String("KDSoapJob(_parent)"));
                 ctor.addInitializer(QLatin1String("mService(service)"));
 
@@ -399,6 +413,7 @@ bool Converter::convertClientService()
                 }
 
                 KODE::Function doStart(QLatin1String("doStart"), QLatin1String("void"), KODE::Function::Protected);
+                doStart.setVirtualMode(KODE::Function::Override);
                 KODE::Code doStartCode;
                 const bool hasAction = clientAddAction(doStartCode, binding, operationName);
                 clientGenerateMessage(doStartCode, binding, message, operation, /*use members=*/true);
@@ -557,7 +572,7 @@ void Converter::addMessageArgument(KODE::Code &code, const SoapBinding::Style &b
 {
     const QString partname = varIsMember ? QLatin1Char('m') + upperlize(localVariableName) : mNameMapper.escape(lowerlize(localVariableName));
     // In document style, the "part" is directly added as arguments
-    // See http://www.ibm.com/developerworks/webservices/library/ws-whichwsdl/
+    // See https://www.ibm.com/developerworks/webservices/library/ws-whichwsdl/
     if (bindingStyle == SoapBinding::DocumentStyle) {
         code.addBlock(serializePart(part, partname, messageName, false));
     } else {
@@ -649,7 +664,7 @@ bool Converter::convertClientCall(const Operation &operation, const Binding &bin
     const int numReturnValues = outParts.count();
 
     if (numReturnValues == 1) {
-        const Part retPart = outParts.first();
+        const Part &retPart = outParts.first();
         const QString retType = mTypeMap.localType(retPart.type(), retPart.element());
         if (retType.isEmpty()) {
             qWarning("Could not generate operation '%s'", qPrintable(operation.name()));
@@ -758,7 +773,7 @@ void Converter::convertClientOutputMessage(const Operation &operation,
 {
     // result signal
     const QString operationName = lowerlize(operation.name());
-    const QString signalBase = operationName;
+    const QString &signalBase = operationName;
     const QString callName = QLatin1String("async") + upperlize(operation.name());
     KODE::Function doneSignal(signalBase + QLatin1String("Done"), QLatin1String("void"), KODE::Function::Signal);
     doneSignal.setDocs(QLatin1String("This signal is emitted whenever the asynchronous call ") + callName + QLatin1String("() has succeeded."));

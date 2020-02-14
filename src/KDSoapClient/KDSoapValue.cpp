@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -209,7 +209,7 @@ static QString variantToTextValue(const QVariant &value, const QString &typeNs, 
     }
     case QVariant::Date:
         return value.toDate().toString(Qt::ISODate);
-    case QVariant::DateTime: // http://www.w3.org/TR/xmlschema-2/#dateTime
+    case QVariant::DateTime: // https://www.w3.org/TR/xmlschema-2/#dateTime
         return KDDateTime(value.toDateTime()).toDateString();
     case QVariant::Invalid:
         qDebug() << "ERROR: Got invalid QVariant in a KDSoapValue";
@@ -311,7 +311,7 @@ void KDSoapValue::writeElementContents(KDSoapNamespacePrefixes &namespacePrefixe
     }
 
     if (use == EncodedUse) {
-        // use=encoded means writing out xsi:type attributes. http://www.eherenow.com/soapfight.htm taught me that.
+        // use=encoded means writing out xsi:type attributes
         QString type;
         if (!this->type().isEmpty()) {
             type = namespacePrefixes.resolve(this->typeNs(), this->type());
@@ -323,7 +323,6 @@ void KDSoapValue::writeElementContents(KDSoapNamespacePrefixes &namespacePrefixe
             writer.writeAttribute(KDSoapNamespaceManager::xmlSchemaInstance2001(), QLatin1String("type"), type);
         }
 
-        // cppcheck-suppress redundantCopyLocalConst
         const KDSoapValueList list = this->childValues();
         const bool isArray = !list.arrayType().isEmpty();
         if (isArray) {

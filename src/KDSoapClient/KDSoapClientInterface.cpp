@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -64,7 +64,7 @@ KDSoapClientInterface::SoapVersion KDSoapClientInterface::soapVersion() const
 }
 
 KDSoapClientInterfacePrivate::KDSoapClientInterfacePrivate()
-    : m_accessManager(0),
+    : m_accessManager(nullptr),
       m_authentication(),
       m_version(KDSoap::SOAP1_1),
       m_style(KDSoapClientInterface::RPCStyle),
@@ -72,7 +72,7 @@ KDSoapClientInterfacePrivate::KDSoapClientInterfacePrivate()
       m_timeout(30 * 60 * 1000) // 30 minutes, as documented
 {
 #ifndef QT_NO_OPENSSL
-    m_sslHandler = 0;
+    m_sslHandler = nullptr;
 #endif
 }
 

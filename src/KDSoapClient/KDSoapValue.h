@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -149,7 +149,7 @@ public:
 
     /**
      * Write out xsi:nil if the KDSoapValue has no content.
-     * See http://www.w3.org/TR/xmlschema-1/#xsi_nil
+     * See https://www.w3.org/TR/xmlschema-1/#xsi_nil
      */
     void setNillable(bool nillable);
 
@@ -306,7 +306,9 @@ private:
     QSharedDataPointer<Private> d;
 };
 
+QT_BEGIN_NAMESPACE
 Q_DECLARE_TYPEINFO(KDSoapValue, Q_MOVABLE_TYPE);
+QT_END_NAMESPACE
 
 KDSOAP_EXPORT QDebug operator <<(QDebug dbg, const KDSoapValue &value);
 

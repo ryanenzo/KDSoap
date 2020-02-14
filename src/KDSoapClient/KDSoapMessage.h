@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -212,5 +212,6 @@ public:
 KDSOAP_EXPORT QDebug operator<<(QDebug dbg, const KDSoapMessage &msg);
 
 Q_DECLARE_METATYPE(KDSoapMessage)
+Q_DECLARE_METATYPE(KDSoapHeaders)
 
 #endif // KDSOAPMESSAGE_H

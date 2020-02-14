@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -35,7 +35,7 @@ static void debugHelper(const QByteArray &data, const QList<QNetworkReply::RawHe
     const bool optReformat = options.contains("reformat");
     quint8 indentation = 4;
     Q_FOREACH( const QByteArray &opt, options ) {
-        if (opt.startsWith("indent=")) {
+        if (opt.startsWith("indent=")) { //krazy:exclude=strings
             indentation = opt.mid(7).toUShort();
         }
     }
@@ -126,7 +126,7 @@ KDSoapPendingCall::Private::~Private()
 {
     if (reply) {
         // Ensure the connection is closed, which QNetworkReply doesn't do in its destructor. This needs abort().
-        QObject::disconnect(reply.data(), SIGNAL(finished()), 0, 0);
+        QObject::disconnect(reply.data(), SIGNAL(finished()), nullptr, nullptr);
         reply->abort();
     }
     delete reply.data();
@@ -199,7 +199,7 @@ void KDSoapPendingCall::Private::parseReply()
 
     if (!data.isEmpty()) {
         KDSoapMessageReader reader;
-        reader.xmlToMessage(data, &replyMessage, 0, &replyHeaders, this->soapVersion);
+        reader.xmlToMessage(data, &replyMessage, nullptr, &replyHeaders, this->soapVersion);
     }
 
     if (reply->error()) {

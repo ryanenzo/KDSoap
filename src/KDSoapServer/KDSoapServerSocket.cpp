@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -79,9 +79,9 @@ static HeadersMap parseHeaders(const QByteArray &headerData)
         qDebug() << "Malformed HTTP request:" << firstLine;
         return headersMap;
     }
-    const QByteArray requestType = firstLine.at(0);
+    const QByteArray& requestType = firstLine.at(0);
     const QByteArray path = QDir::cleanPath(QString::fromLatin1(firstLine.at(1).constData())).toLatin1();
-    const QByteArray httpVersion = firstLine.at(2);
+    const QByteArray& httpVersion = firstLine.at(2);
     headersMap.insert("_requestType", requestType);
     headersMap.insert("_path", path);
     headersMap.insert("_httpVersion", httpVersion);
@@ -127,7 +127,7 @@ static QByteArray httpResponseHeaders(bool fault, const QByteArray &contentType,
     QByteArray httpResponse;
     httpResponse.reserve(50);
     if (fault) {
-        // http://www.w3.org/TR/2007/REC-soap12-part0-20070427 and look for 500
+        // https://www.w3.org/TR/2007/REC-soap12-part0-20070427 and look for 500
         httpResponse += "HTTP/1.1 500 Internal Server Error\r\n";
     } else if (responseDataSize == 0) {
         httpResponse += "HTTP/1.1 204 No Content\r\n";
@@ -273,7 +273,7 @@ void KDSoapServerSocket::slotReadyRead()
     }
     m_requestBuffer.clear();
     m_httpHeaders.clear();
-    m_receivedData = 0;
+    m_receivedData = false;
 }
 
 void KDSoapServerSocket::handleRequest(const QMap<QByteArray, QByteArray> &httpHeaders, const QByteArray &receivedData)
@@ -316,7 +316,7 @@ void KDSoapServerSocket::handleRequest(const QMap<QByteArray, QByteArray> &httpH
     if (!serverObjectInterface) {
         const QString error = QString::fromLatin1("Server object %1 does not implement KDSoapServerObjectInterface!").arg(QString::fromLatin1(m_serverObject->metaObject()->className()));
         handleError(replyMsg, "Server.ImplementationError", error);
-        sendReply(0, replyMsg);
+        sendReply(nullptr, replyMsg);
         return;
     } else {
         serverObjectInterface->setServerSocket(this);
@@ -329,11 +329,11 @@ void KDSoapServerSocket::handleRequest(const QMap<QByteArray, QByteArray> &httpH
             return;
         }
 
-        // See http://www.ibm.com/developerworks/xml/library/x-tipgetr/
+        // See https://www.ibm.com/developerworks/xml/library/x-tipgetr/
         // We could implement it, but there's no SOAP request, just a query in the URL,
         // which we'd have to pass to a different virtual than processRequest.
         handleError(replyMsg, "Client.Data", QString::fromLatin1("Support for GET requests not implemented yet."));
-        sendReply(0, replyMsg);
+        sendReply(nullptr, replyMsg);
         return;
     }
 

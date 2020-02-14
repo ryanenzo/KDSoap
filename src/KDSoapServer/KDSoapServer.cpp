@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -36,8 +36,8 @@ class KDSoapServer::Private
 {
 public:
     Private()
-        : m_threadPool(0),
-          m_mainThreadSocketList(0),
+        : m_threadPool(nullptr),
+          m_mainThreadSocketList(nullptr),
           m_use(KDSoapMessage::LiteralUse),
           m_logLevel(KDSoapServer::LogNothing),
           m_path(QString::fromLatin1("/")),

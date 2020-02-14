@@ -37,6 +37,8 @@ SUBDIRS = \
   encapsecurity \
   prefix_wsdl \
   vidyo \
+  pki.pca.dfn.de \
+  kddatetime \
   empty_list_wsdl \
   onvif_org_event \
   empty_element_wsdl \
@@ -46,13 +48,18 @@ SUBDIRS = \
   dv_terminalauth \
   test_calc \
   ws_addressing_support \
-  ws_usernametoken_support
+  ws_usernametoken_support \
+  list_restriction \
+  QSharedPointer_include
+
+greaterThan(QT_MAJOR_VERSION, 4): SUBDIRS += soap_over_udp
 
 # These need internet access
 SUBDIRS += webcalls webcalls_wsdl
 
 # TODO: If boost optional is installed
 #SUBDIRS += optionaltype_boost_optional
+#SUBDIRS += default_attribute_value_wsdl
 
 #with msvc, cribis requires the /bigobj option
 win32-msvc*: QMAKE_CXXFLAGS += /bigobj

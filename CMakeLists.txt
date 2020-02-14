@@ -11,8 +11,13 @@
 #  Build the test harness.
 #  Default=false
 #
+# -DKDSoap_EXAMPLES=[true|false]
+#  Build the examples.
+#  Default=true
+#
 cmake_minimum_required(VERSION 2.8.7)
 cmake_policy(SET CMP0020 NEW)
+cmake_policy(SET CMP0025 NEW)
 
 if("${CMAKE_INSTALL_PREFIX}" STREQUAL "")
   set(USE_DEFAULT_INSTALL_LOCATION True)
@@ -40,12 +45,20 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ ${CMAKE_MODULE_PATH}")
 
 option(${PROJECT_NAME}_STATIC "Build statically" OFF)
 option(${PROJECT_NAME}_TESTS "Build the tests" OFF)
+option(${PROJECT_NAME}_EXAMPLES "Build the examples" ON)
 
 set(${PROJECT_NAME}_VERSION_MAJOR 1)
-set(${PROJECT_NAME}_VERSION_MINOR 7)
+set(${PROJECT_NAME}_VERSION_MINOR 8)
 set(${PROJECT_NAME}_VERSION_PATCH 50)
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH})
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+find_path(BOOST_OPTIONAL_DIR NAMES boost/optional.hpp)
+if (BOOST_OPTIONAL_DIR)
+    message(STATUS "Found boost/optional.hpp in ${BOOST_OPTIONAL_DIR}")
+    include_directories(${BOOST_OPTIONAL_DIR})
+    add_definitions(-DBOOST_OPTIONAL_FOUND) # I'd really prefer using configure_file but this is more compatible with qmake
+endif()
 
 # setup default install locations
 include(InstallLocation)
@@ -75,6 +88,9 @@ if(Qt5Core_FOUND)
 
 else()
   find_package(Qt4 4.7 QUIET REQUIRED QtCore QtMain)
+
+  # Workaround qt4 moc bug, see https://bugzilla.redhat.com/show_bug.cgi?id=1396755
+  add_definitions(-D_SYS_SYSMACROS_H_OUTER)
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
@@ -84,6 +100,10 @@ add_definitions(-DQT_NO_CAST_TO_ASCII -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_FROM_
 add_definitions(-DUSE_EXCEPTIONS -DQT_FATAL_ASSERT)
 if(MSVC)
   add_definitions(-D_SCL_SECURE_NO_WARNINGS)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+  add_compile_options(-Wsuggest-override)
 endif()
 
 if(${PROJECT_NAME}_STATIC)
@@ -117,10 +137,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
 
-  set(CMAKE_INSTALL_RPATH ${INSTALL_LIBRARY_DIR})
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-  install(FILES LICENSE.GPL.txt LICENSE.US.txt LICENSE.txt README.txt kdsoap.pri kdwsdl2cpp.pri DESTINATION ${INSTALL_DOC_DIR})
+  install(FILES LICENSE.GPL.txt LICENSE.txt README.txt kdsoap.pri kdwsdl2cpp.pri DESTINATION ${INSTALL_DOC_DIR})
 
   if(CMAKE_VERSION VERSION_LESS 2.8.8)
     include("${CMAKE_SOURCE_DIR}/cmake/CMakePackageConfigHelpers.cmake")
@@ -175,5 +192,7 @@ if(${PROJECT_NAME}_IS_ROOT_PROJECT)
     add_subdirectory(testtools)
     add_subdirectory(unittests)
   endif()
-  add_subdirectory(examples)
+  if(${PROJECT_NAME}_EXAMPLES)
+    add_subdirectory(examples)
+  endif()
 endif()

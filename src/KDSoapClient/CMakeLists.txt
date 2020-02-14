@@ -29,11 +29,13 @@ set(SOURCES
   KDSoapMessageAddressingProperties.cpp
   KDSoapEndpointReference.cpp
   KDQName.cpp
+  KDSoapUdpClient.cpp
 )
 
 add_library(kdsoap ${KDSoap_LIBRARY_MODE} ${SOURCES})
 target_link_libraries(kdsoap ${QT_LIBRARIES})
 set_target_properties(kdsoap PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
+target_include_directories(kdsoap INTERFACE "$<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>")
 
 # append d to debug libraries for windows builds
 if(WIN32)
@@ -69,6 +71,7 @@ if(KDSoap_IS_ROOT_PROJECT)
       KDSoapPendingCall
       KDSoapAuthentication
       KDQName
+      KDSoapUdpClient
     COMMON_HEADER
       KDSoapClient
   )
@@ -91,6 +94,7 @@ if(KDSoap_IS_ROOT_PROJECT)
     KDSoapMessageAddressingProperties.h
     KDSoapEndpointReference.h
     KDQName.h
+    KDSoapUdpClient.h
     DESTINATION ${INSTALL_INCLUDE_DIR}/KDSoapClient
   )
 

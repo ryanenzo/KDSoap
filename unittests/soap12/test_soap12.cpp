@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2014-2018 Klarälvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2014-2019 Klarälvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -21,7 +21,7 @@
 **********************************************************************/
 
 #include "httpserver_p.h"
-#include <QtTest/QtTest>
+#include <QTest>
 #include <QDebug>
 #include "wsdl_soap12.h"
 

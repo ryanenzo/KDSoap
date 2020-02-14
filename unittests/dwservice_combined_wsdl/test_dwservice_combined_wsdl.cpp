@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -26,7 +26,7 @@
 #include "KDSoapValue.h"
 #include "KDDateTime.h"
 #include "httpserver_p.h"
-#include <QtTest/QtTest>
+#include <QTest>
 #include <QDebug>
 
 // Testcase for multiple services defined in one .wsdl file

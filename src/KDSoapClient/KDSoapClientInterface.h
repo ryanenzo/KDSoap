@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2010-2018 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2010-2019 Klaralvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** This file is part of the KD Soap library.
@@ -252,7 +252,7 @@ public:
 
     /**
      * WSDL style. See the "style" attribute for soap:binding, in the WSDL file.
-     * See http://www.ibm.com/developerworks/webservices/library/ws-whichwsdl/ for a discussion
+     * See https://www.ibm.com/developerworks/webservices/library/ws-whichwsdl/ for a discussion
      * on the pros and cons of both styles.
      *
      * In RPC style, the method name passed to call() or asyncCall() is sent as an xml element

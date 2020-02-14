@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (C) 2014-2018 Klarälvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
+** Copyright (C) 2014-2019 Klarälvdalens Datakonsult AB, a KDAB Group company, info@kdab.com.
 ** All rights reserved.
 **
 ** Author: Ville Voutilainen <ville.voutilainen gmail.com>
@@ -23,7 +23,7 @@
 **********************************************************************/
 
 #include "testregularapi.h"
-#include <QtTest/QtTest>
+#include <QTest>
 #include <QDebug>
 
 TestRegularApi::TestRegularApi()
@@ -59,6 +59,22 @@ void TestRegularApi::testPolymorphic()
     QVERIFY(resp.out2());
     QCOMPARE(resp.out2()->value(), QString("derived"));
     QCOMPARE(dynamic_cast<const TNS__DerivedClass*>(resp.out2())->value2(), QString("derived"));
+}
+
+void TestRegularApi::testSerialize()
+{
+    // TNS__TestOperationResponse1 has "out3" which is polymorphic AND non-optional
+    //    If "out3" is not initialized, then trying to serialize causes a crash.
+    //    Verify it doesn't crash.
+    TNS__TestOperationResponse1 resp;
+    resp.serialize("Test");
+    QCOMPARE(resp.out3().value(), QString());
+
+    TNS__DerivedClass derivedValue;
+    derivedValue.setValue("derived");
+    derivedValue.setValue2("derived");
+    resp.setOut3(derivedValue);
+    QCOMPARE(resp.out3().value(), QString("derived"));
 }
 
 QTEST_MAIN(TestRegularApi)
